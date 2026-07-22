@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scope-core"
+version = "0.1.0"
+description = "Shared scope-enforcement and ingestion-sanitization primitives for glunk-works bounty tooling"
+readme = "README.md"
+# Floor set to satisfy both current consumers, not inherited by accident:
+# bounty-infra declares >=3.11 (CI validates 3.11, runtime image is 3.14);
+# loop-orchestrator declares >=3.12. 3.11 is the lower bound; the CI matrix
+# below tests both ends of bounty-infra's range so a change here can't
+# silently break an install neither consumer's own CI would catch.
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+]
+
+[project.urls]
+Source = "https://github.com/glunk-works/scope-core"
+Issues = "https://github.com/glunk-works/scope-core/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scope_core"]
+
+[tool.hatch.envs.lint]
+skip-install = true
+dependencies = [
+    "ruff",
+]
+[tool.hatch.envs.lint.scripts]
+check = [
+    "ruff check scope_core/ tests/",
+    "ruff format --check scope_core/ tests/",
+]
+fmt = [
+    "ruff format scope_core/ tests/",
+    "ruff check --fix scope_core/ tests/",
+]
+
+[tool.hatch.envs.test]
+dependencies = [
+    "pytest",
+]
+[tool.hatch.envs.test.scripts]
+run = "pytest ./tests/"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+# S101: pytest's assert-based idiom is expected in test files.
+"tests/**" = ["S101"]
