@@ -1,0 +1,58 @@
+name: "Continuous Integration"
+
+# No `paths:` filter -- a required check on a path-filtered workflow can
+# deadlock a PR that doesn't touch the filtered paths (bounty-infra T3(a)).
+# Runs on every PR.
+#
+# Job ids ARE the required-check contexts -- no `name:` override on any job
+# below. Renaming a job here silently un-requires the check it backs.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with: { python-version: "3.11" }
+      - run: pip install hatch
+      - name: Ruff
+        run: hatch run lint:check
+
+  # No matrix: a matrixed job id produces suffixed check-run names
+  # ("test (3.11)"), which breaks the org's required-checks-match-job-id
+  # convention. Two plain jobs instead, one per end of the version floor
+  # declared in pyproject.toml: 3.11 is the package's own floor (matching
+  # bounty-infra's CI-validated version), 3.14 matches bounty-infra's
+  # runtime image. loop-orchestrator's own floor (>=3.12) sits inside this
+  # range and is covered by that repo's own CI.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with: { python-version: "3.11" }
+      - run: pip install hatch
+      - name: Pytest
+        run: hatch run test:run
+
+  test-py314:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with: { python-version: "3.14" }
+      - run: pip install hatch
+      - name: Pytest
+        run: hatch run test:run

@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Distribution / packaging
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+
+# SBOM / audit artifacts, if ever generated locally
+sbom.json
+
+# VS Code / OS
+.vscode/
+.DS_Store
+Thumbs.db
