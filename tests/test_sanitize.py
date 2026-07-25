@@ -1,4 +1,4 @@
-from scope_core.sanitize import DEFAULT_MAX_LEN, sanitize
+from scope_core.sanitize import DEFAULT_MAX_LEN, normalize, sanitize
 
 
 def test_strips_c0_control_characters() -> None:
@@ -104,3 +104,52 @@ def test_adversarial_combined_payload() -> None:
 def test_default_max_len_constant_is_a_positive_int() -> None:
     assert isinstance(DEFAULT_MAX_LEN, int)
     assert DEFAULT_MAX_LEN > 0
+
+
+def test_normalize_strips_c0_control_characters() -> None:
+    assert normalize("a\x00b\x07c\x1fd") == "abcd"
+
+
+def test_normalize_strips_ansi_csi_escape_sequences() -> None:
+    assert normalize("\x1b[31mred\x1b[0m text") == "red text"
+
+
+def test_normalize_strips_zero_width_and_bom_code_points() -> None:
+    assert normalize("a​b‌c‍d⁠e﻿f") == "abcdef"
+
+
+def test_normalize_strips_variation_selectors() -> None:
+    vs16 = "️"  # VARIATION SELECTOR-16
+    assert normalize(f"a{vs16}b") == "ab"
+
+
+def test_normalize_nfkc_normalizes_compatibility_characters() -> None:
+    assert normalize("ＡＢﬁle") == "ABfile"
+
+
+def test_normalize_does_not_collapse_whitespace_runs() -> None:
+    # This is the whole point of `normalize` vs `sanitize`: the identifier
+    # path must not have internal whitespace collapsed.
+    assert normalize("a   b\n\nc\t\td") == "a   b\n\nc\t\td"
+
+
+def test_normalize_does_not_strip_leading_or_trailing_whitespace() -> None:
+    assert normalize("   padded text   ") == "   padded text   "
+
+
+def test_normalize_does_not_truncate() -> None:
+    text = "x" * 5000
+    result = normalize(text)
+    assert result == text
+    assert len(result) == 5000
+
+
+def test_normalize_is_deterministic() -> None:
+    text = "some \x1b[1mscanner\x1b[0m banner​ with\ttabs"
+    assert normalize(text) == normalize(text)
+
+
+def test_sanitize_composes_whitespace_collapse_and_truncate_on_top_of_normalize() -> None:
+    text = "  a\x00b   c\n\nd  "
+    assert normalize(text) == "  ab   c\n\nd  "
+    assert sanitize(text, max_len=100) == "ab c d"

@@ -53,16 +53,25 @@ def _strip_invisible_format_characters(text: str) -> str:
     )
 
 
-def sanitize(text: str, *, max_len: int) -> str:
-    """Structural/mechanical normalization only: strip ANSI CSI escapes,
-    C0/C1 control characters, and invisible format/variation-selector code
-    points; NFKC-normalize; collapse whitespace runs; hard-truncate to
-    `max_len`. Deterministic and pure -- identical input always yields
-    identical output.
+def normalize(text: str) -> str:
+    """The structural prefix of `sanitize`: strip ANSI CSI escapes, C0/C1
+    control characters, and invisible format/variation-selector code
+    points; NFKC-normalize. No whitespace-collapse, no truncation --
+    identifiers (a scope key + DB join key) must anti-evasion-normalize
+    without changing length or collapsing internal whitespace the way free
+    text destined for a triage LLM does. Deterministic and pure.
     """
     text = _ANSI_CSI_RE.sub("", text)
     text = _C0_C1_CONTROL_RE.sub("", text)
     text = _strip_invisible_format_characters(text)
-    text = unicodedata.normalize("NFKC", text)
+    return unicodedata.normalize("NFKC", text)
+
+
+def sanitize(text: str, *, max_len: int) -> str:
+    """Structural/mechanical normalization only: `normalize`, then collapse
+    whitespace runs and hard-truncate to `max_len`. Deterministic and pure
+    -- identical input always yields identical output.
+    """
+    text = normalize(text)
     text = _WHITESPACE_RUN_RE.sub(" ", text).strip()
     return text[:max_len]

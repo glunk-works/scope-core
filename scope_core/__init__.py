@@ -7,14 +7,16 @@ runtime import outside the standard library and pydantic (enforced by
 """
 
 from scope_core.rules import ScopeRules
-from scope_core.sanitize import DEFAULT_MAX_LEN, sanitize
-from scope_core.validate import ScopeViolation, is_action_banned, validate_target
+from scope_core.sanitize import DEFAULT_MAX_LEN, normalize, sanitize
+from scope_core.validate import ScopeViolation, is_action_banned, is_in_scope, validate_target
 
 __all__ = [
     "DEFAULT_MAX_LEN",
     "ScopeRules",
     "ScopeViolation",
     "is_action_banned",
+    "is_in_scope",
+    "normalize",
     "sanitize",
     "validate_target",
 ]

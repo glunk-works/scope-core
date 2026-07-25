@@ -25,6 +25,18 @@ class ScopeViolation(Exception):
         super().__init__(f"{candidate!r} is out of scope: {reason}")
 
 
+def is_in_scope(rules: ScopeRules, candidate: str) -> bool:
+    """Pure, non-raising predicate: the same allow/deny logic as
+    `validate_target` (allowed iff >=1 in-scope match AND 0 out-of-scope
+    matches; deny wins; an empty `in_scope_regex` denies everything),
+    without the raise -- for callers filtering a bulk stream where
+    exception-as-control-flow per candidate is the wrong shape.
+    """
+    return not any(pattern.search(candidate) for pattern in rules._out_of_scope_compiled) and any(
+        pattern.search(candidate) for pattern in rules._in_scope_compiled
+    )
+
+
 def validate_target(rules: ScopeRules, candidate: str) -> None:
     """Fail-closed allowlist: allowed iff >=1 in-scope match AND 0
     out-of-scope matches. An out-of-scope match always vetoes (deny wins),
@@ -40,7 +52,7 @@ def validate_target(rules: ScopeRules, candidate: str) -> None:
     for pattern in rules._out_of_scope_compiled:
         if pattern.search(candidate):
             raise ScopeViolation(candidate, "matched an out-of-scope rule")
-    if not any(pattern.search(candidate) for pattern in rules._in_scope_compiled):
+    if not is_in_scope(rules, candidate):
         raise ScopeViolation(candidate, "no in-scope rule matched")
 
 
