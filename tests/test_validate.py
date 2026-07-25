@@ -1,7 +1,7 @@
 import pytest
 
 from scope_core.rules import ScopeRules
-from scope_core.validate import ScopeViolation, is_action_banned, validate_target
+from scope_core.validate import ScopeViolation, is_action_banned, is_in_scope, validate_target
 
 
 def test_empty_in_scope_denies_everything() -> None:
@@ -81,3 +81,61 @@ def test_is_action_banned_false() -> None:
 def test_is_action_banned_never_raises_on_empty_rules() -> None:
     rules = ScopeRules()
     assert is_action_banned(rules, "anything") is False
+
+
+def test_is_in_scope_true_on_in_scope_match() -> None:
+    rules = ScopeRules(in_scope_regex=[r"^example\.com$"])
+    assert is_in_scope(rules, "example.com") is True
+
+
+def test_is_in_scope_false_on_no_in_scope_match() -> None:
+    rules = ScopeRules(in_scope_regex=[r"^example\.com$"])
+    assert is_in_scope(rules, "other.com") is False
+
+
+def test_is_in_scope_false_on_out_of_scope_veto() -> None:
+    rules = ScopeRules(
+        in_scope_regex=[r"example\.com"],
+        out_of_scope_regex=[r"^admin\.example\.com$"],
+    )
+    assert is_in_scope(rules, "admin.example.com") is False
+
+
+def test_is_in_scope_false_on_empty_in_scope() -> None:
+    rules = ScopeRules()
+    assert is_in_scope(rules, "example.com") is False
+
+
+def test_is_in_scope_never_raises() -> None:
+    rules = ScopeRules()
+    # A candidate that would raise `ScopeViolation` from `validate_target`
+    # must just return False here -- that's the whole point of the
+    # non-raising predicate for bulk-filter callers.
+    assert is_in_scope(rules, "anything") is False
+
+
+def test_is_in_scope_and_validate_target_agree_across_a_case_matrix() -> None:
+    # Parity: `is_in_scope`'s boolean and `validate_target`'s raise/no-raise
+    # must decide identically for every case, since `validate_target` is
+    # now defined in terms of `is_in_scope` for the in-scope half.
+    cases = [
+        (ScopeRules(), "example.com"),
+        (ScopeRules(in_scope_regex=[r"^example\.com$"]), "example.com"),
+        (ScopeRules(in_scope_regex=[r"^example\.com$"]), "other.com"),
+        (ScopeRules(in_scope_regex=[r".*"]), "anything"),
+        (
+            ScopeRules(in_scope_regex=[r"example\.com"], out_of_scope_regex=[r"^admin\."]),
+            "admin.example.com",
+        ),
+        (
+            ScopeRules(in_scope_regex=[r"example\.com"], out_of_scope_regex=[r"^admin\."]),
+            "www.example.com",
+        ),
+    ]
+    for rules, candidate in cases:
+        allowed = is_in_scope(rules, candidate)
+        if allowed:
+            assert validate_target(rules, candidate) is None
+        else:
+            with pytest.raises(ScopeViolation):
+                validate_target(rules, candidate)
