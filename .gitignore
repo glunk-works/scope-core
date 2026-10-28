@@ -20,3 +20,6 @@ sbom.json
 .vscode/
 .DS_Store
 Thumbs.db
+
+# way-of-working's local cursor (git-ignored by design; .ai/next-steps.md is the tracked ledger)
+.ai/state.json
