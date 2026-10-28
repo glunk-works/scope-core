@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(gh pr merge:*)", "PowerShell(gh pr merge:*)",
+      "Bash(git push --force:*)", "PowerShell(git push --force:*)",
+      "Bash(git push --force-with-lease:*)", "PowerShell(git push --force-with-lease:*)",
+      "Bash(git push -f:*)", "PowerShell(git push -f:*)",
+      "Bash(gh api -X DELETE:*)", "PowerShell(gh api -X DELETE:*)",
+      "Bash(gh api --method DELETE:*)", "PowerShell(gh api --method DELETE:*)"
+    ]
+  },
+  "enabledPlugins": { "way-of-working@claude-workbench": true },
+  "extraKnownMarketplaces": {
+    "claude-workbench": {
+      "source": { "source": "github", "repo": "glunk-works/claude-workbench", "ref": "v0.28.0" }
+    }
+  }
+}
