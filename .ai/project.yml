@@ -1,7 +1,7 @@
 # The way-of-working plugin's parameterization contract for this repo
 # (claude-workbench plugins/way-of-working/reference/project-schema.md, v0.28.0).
-# Describes the repo as of 2026-10-28. `orchestration` and `identities` stay
-# null until the glunk-works/claude-workbench#410 cutover.
+# Describes the repo as of 2026-10-28. `identities` is now the map
+# (glunk-works/claude-workbench#410 PR 1); `orchestration` stays null.
 
 # ── identity ─────────────────────────────────────────────────────────────────
 repo: glunk-works/scope-core
@@ -45,13 +45,25 @@ gates:
 
 # ── branch protection ────────────────────────────────────────────────────────
 ruleset:
-  name: protected-integration-branches
-  rule_types: [deletion, non_fast_forward, pull_request, required_status_checks]
-  required_checks: [lint, test, test-py314]
+  name: main-required-checks
+  rule_types: [required_status_checks]
+  required_checks: [lint, test, test-py314, architect-review]
+rulesets:
+  - name: main-required-checks
+    source: repo
+    rule_types: [required_status_checks]
+    required_checks: [lint, test, test-py314, architect-review]
+  - name: protected-integration-branches
+    source: repo
+    rule_types: [deletion, non_fast_forward, pull_request]
 
 # ── the fresh-session review gate ────────────────────────────────────────────
 review:
-  ci_gate: null
+  ci_gate:
+    check: architect-review
+    header: "**Opus/Architect review (automated)**"
+    attestation: "*Fresh-session review: this session did not author the diff.*"
+    triggers_on: null # null means code_paths; a PR touching nothing under code_paths is not gated.
 
 # ── agents ───────────────────────────────────────────────────────────────────
 agents:
@@ -66,4 +78,15 @@ models:
 orchestration: null
 
 # ── declared identities ──────────────────────────────────────────────────────
-identities: null
+identities:
+  maintainer:
+    - {login: Seuss27, id: 22668449}
+  dev_app:
+    login: "glunk-dev[bot]"
+    id: 339840170
+  reviewer_app:
+    login: "glunk-review[bot]"
+    id: 339841158
+  loop_app:
+    login: "glunk-loop[bot]"
+    id: 338193635
