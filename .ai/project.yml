@@ -1,0 +1,69 @@
+# The way-of-working plugin's parameterization contract for this repo
+# (claude-workbench plugins/way-of-working/reference/project-schema.md, v0.28.0).
+# Describes the repo as of 2026-10-28. `orchestration` and `identities` stay
+# null until the glunk-works/claude-workbench#410 cutover.
+
+# ── identity ─────────────────────────────────────────────────────────────────
+repo: glunk-works/scope-core
+pr_base: main
+migration_base: null
+
+# ── the deep record ──────────────────────────────────────────────────────────
+roadmap: docs/decisions.md
+sprints_dir: sprints
+threat_model: docs/decisions.md
+
+planning:
+  kind: github_milestones
+
+decisions:
+  log: docs/decisions.md
+  prefix: SC-D
+
+backlog:
+  kind: github_issues
+  repo: null
+  path: null
+  item_prefix: null
+
+load_bearing_docs:
+  - README.md
+  - docs/decisions.md
+
+# ── what counts as a behavior change ─────────────────────────────────────────
+code_paths:
+  - scope_core/
+  - tests/
+  - pyproject.toml
+  - .github/workflows/
+
+# ── the local green gate ─────────────────────────────────────────────────────
+gates:
+  green:
+    - { run: hatch run lint:check }
+    - { run: hatch run test:run }
+
+# ── branch protection ────────────────────────────────────────────────────────
+ruleset:
+  name: protected-integration-branches
+  rule_types: [deletion, non_fast_forward, pull_request, required_status_checks]
+  required_checks: [lint, test, test-py314]
+
+# ── the fresh-session review gate ────────────────────────────────────────────
+review:
+  ci_gate: null
+
+# ── agents ───────────────────────────────────────────────────────────────────
+agents:
+  enabled: [architect, coder, security-critic, docs-consistency]
+  diff_rule: null
+models:
+  architect: opus
+  coder: sonnet
+  second_opinion: null
+
+# ── the sprint-orchestrator loop ─────────────────────────────────────────────
+orchestration: null
+
+# ── declared identities ──────────────────────────────────────────────────────
+identities: null
